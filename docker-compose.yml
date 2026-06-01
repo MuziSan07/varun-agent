@@ -1,0 +1,15 @@
+# Local/cloud run with a persistent data volume so reminders + scheduled calls
+# survive container restarts.
+services:
+  assistant:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - assistant-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  assistant-data:

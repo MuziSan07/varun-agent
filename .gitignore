@@ -1,0 +1,32 @@
+# Secrets
+.env
+.env.local
+*.env
+
+# Persistent datastore (JSON files / sqlite)
+data/
+*.sqlite
+*.sqlite3
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Logs
+logs/
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Temp media downloaded from WhatsApp
+tmp/
+
+# stray temp files
+b.txt
+be.txt
+*.tmp

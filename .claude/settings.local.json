@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)",
+      "PowerShell(\"---NODE---\")",
+      "PowerShell(\"---NPM---\")",
+      "PowerShell($line = \\(Get-Content tests/phone.test.js\\)[6]; $line; \"---BYTES---\"; [System.Text.Encoding]::UTF8.GetBytes\\($line\\) -join ',')",
+      "Bash(node --input-type=module -e ' *)",
+      "PowerShell($v = ngrok version 2>&1 | Out-String; \"VERSION: $v\"; $c = ngrok config check 2>&1 | Out-String; \"CONFIG: $c\")",
+      "Bash(node src/index.js)",
+      "Bash(node -e ' *)",
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue | Select-Object Id, StartTime, @{n='Mins';e={[math]::Round\\(\\(\\(Get-Date\\)-$_.StartTime\\).TotalMinutes,1\\)}} | Format-Table -AutoSize; \"---PORT 3000---\"; Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue | Select-Object LocalPort, OwningProcess)",
+      "Bash(node -e \"console.log\\('ANTHROPIC in ambient env?', JSON.stringify\\(process.env.ANTHROPIC_API_KEY\\)\\); console.log\\('OPENAI in ambient env?', JSON.stringify\\(process.env.OPENAI_API_KEY\\)\\); console.log\\('TWILIO_SID in ambient env?', JSON.stringify\\(process.env.TWILIO_ACCOUNT_SID\\)\\);\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/test/claude)",
+      "Bash(curl -s -X POST http://localhost:3000/api/agent/test -H \"Content-Type: application/json\" -d '{\"text\":\"Hi! What can you help me with? Keep it short.\"}')",
+      "Bash(curl -s http://localhost:3000/health)",
+      "Bash(curl -s -X POST http://localhost:3000/api/test/openai)",
+      "Bash(curl -s -X POST http://localhost:3000/api/test/twilio)",
+      "Bash(curl -s -X POST http://localhost:3000/api/agent/test -H \"Content-Type: application/json\" -d '{\"text\":\"Yes book it now from Bandra to Mumbai airport, go ahead\"}')",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{console.log\\(JSON.parse\\(d\\).reply\\)}\\)\")",
+      "Bash(ngrok http *)",
+      "Bash(rm -f b.txt be.txt)",
+      "Bash(git rm *)",
+      "Bash(printf \"\\\\n# stray temp files\\\\nb.txt\\\\nbe.txt\\\\n*.tmp\\\\n\")",
+      "Bash(git add *)"
+    ]
+  }
+}

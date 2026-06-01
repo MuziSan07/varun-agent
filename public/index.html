@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WhatsApp AI Assistant — Dev Console</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>WhatsApp AI Assistant <span class="sub">developer console</span></h1>
+    <div class="mode">
+      <span id="modeLabel" class="badge">…</span>
+      <button id="modeToggle" class="btn">Toggle SANDBOX / LIVE</button>
+    </div>
+  </header>
+
+  <div id="tokenBar" class="token-bar hidden">
+    <label>Dashboard token: <input id="tokenInput" type="password" placeholder="DASHBOARD_TOKEN" /></label>
+    <button id="tokenSave" class="btn">Save</button>
+  </div>
+
+  <main>
+    <!-- Connection tests -->
+    <section class="card">
+      <h2>API connections</h2>
+      <p class="hint">Each test makes a real authenticated call and shows the actual error on failure.</p>
+      <div id="services" class="services"></div>
+    </section>
+
+    <!-- Agent tester -->
+    <section class="card">
+      <h2>Try the agent (no WhatsApp needed)</h2>
+      <p class="hint">Type a message as if you were the client. Tools run for real in LIVE, simulated in SANDBOX.</p>
+      <textarea id="agentInput" rows="2" placeholder="e.g. Book me an Uber from Bandra to Mumbai airport"></textarea>
+      <button id="agentSend" class="btn primary">Send to agent</button>
+      <pre id="agentReply" class="output"></pre>
+    </section>
+
+    <!-- Transcription tester -->
+    <section class="card">
+      <h2>Transcription (English / Hindi / Hinglish)</h2>
+      <p class="hint">Upload a voice note (.ogg/.mp3/.wav/.m4a) to test Whisper independently.</p>
+      <input id="audioFile" type="file" accept="audio/*" />
+      <button id="transcribeBtn" class="btn">Transcribe</button>
+      <pre id="transcribeOut" class="output"></pre>
+    </section>
+
+    <!-- Send a test message -->
+    <section class="card">
+      <h2>Send a WhatsApp message</h2>
+      <p class="hint">Direct send (bypasses the 24h check — use for testing your own sandbox-joined number).</p>
+      <div class="row">
+        <input id="sendTo" placeholder="whatsapp:+1222... or +1222..." />
+        <input id="sendBody" placeholder="Message body" />
+        <button id="sendBtn" class="btn">Send</button>
+      </div>
+      <pre id="sendOut" class="output"></pre>
+    </section>
+
+    <!-- Live logs -->
+    <section class="card wide">
+      <h2>Live logs
+        <select id="logLevel">
+          <option value="all">all</option>
+          <option value="info">info</option>
+          <option value="warn">warn</option>
+          <option value="error">error</option>
+        </select>
+        <button id="logClear" class="btn small">clear view</button>
+      </h2>
+      <div id="logs" class="logs"></div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
