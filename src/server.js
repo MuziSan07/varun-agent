@@ -18,6 +18,7 @@ import * as claude from './services/claude.js';
 import * as openai from './services/openai.js';
 import * as twilioSvc from './services/twilio.js';
 import * as uber from './services/uber.js';
+import * as google from './services/google.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
@@ -36,6 +37,30 @@ export function createServer() {
   app.post('/webhook/whatsapp', validateTwilioSignature, handleInboundWhatsApp);
 
   app.get('/health', (_req, res) => res.json({ ok: true, mode: getMode() }));
+
+  // ---- Google OAuth (Gmail) ------------------------------------------------
+  // The app opens /auth/google?appToken=... in a browser. We redirect to Google;
+  // Google redirects back to /auth/google/callback; we store the refresh token
+  // and show a "you can return to the app" page.
+  app.get('/auth/google', (req, res) => {
+    if (!google.isConfigured()) {
+      return res.status(500).send('Gmail is not configured on the server (GOOGLE_CLIENT_ID/SECRET missing).');
+    }
+    res.redirect(google.getAuthUrl());
+  });
+
+  app.get('/auth/google/callback', async (req, res) => {
+    const { code, error } = req.query;
+    if (error) return res.send(authPage(`Google sign-in was cancelled (${error}).`, false));
+    if (!code) return res.send(authPage('No authorization code returned.', false));
+    try {
+      await google.exchangeCode(code);
+      res.send(authPage('✅ Gmail connected! You can close this tab and return to the app.', true));
+    } catch (err) {
+      logger.error('google', 'OAuth callback failed', { error: err.message });
+      res.send(authPage(`Sign-in failed: ${err.message}`, false));
+    }
+  });
 
   // ---- Mobile app API (token-protected via X-App-Token) --------------------
   // The mobile app does NOT execute tools on the server — it sends the user's
@@ -61,6 +86,34 @@ export function createServer() {
         result.data = { savedNote: { id: note.id, text: note.text } };
       } else if (result.ok && result.tool === 'list_notes') {
         result.data = { notes: listNotes(userId).map((n) => ({ id: n.id, text: n.text, createdAt: n.createdAt })) };
+      } else if (result.ok && result.tool === 'check_email') {
+        if (!google.isConnected()) {
+          result.data = { needsGmail: true };
+        } else {
+          try {
+            const mails = await google.listRecent({ days: result.input.days || 1, max: 10 });
+            result.data = { emails: mails };
+          } catch (err) {
+            result.data = { emailError: err.message };
+          }
+        }
+      } else if (result.ok && result.tool === 'send_email') {
+        // If the recipient is already an email address, the server sends it now.
+        // If it's a NAME, tell the app to resolve the contact's email and call
+        // /mobile/send-email. (Contacts live on the device.)
+        const to = String(result.input.to || '');
+        if (!google.isConnected()) {
+          result.data = { needsGmail: true };
+        } else if (/\S+@\S+\.\S+/.test(to)) {
+          try {
+            await google.sendEmail({ to, subject: result.input.subject, body: result.input.body });
+            result.data = { emailSent: { to } };
+          } catch (err) {
+            result.data = { emailError: err.message };
+          }
+        } else {
+          result.data = { resolveContactEmail: { name: to, subject: result.input.subject, body: result.input.body } };
+        }
       }
 
       logger.info('mobile', 'interpret', { tool: result.tool });
@@ -82,6 +135,28 @@ export function createServer() {
       res.json({ ok: true, text });
     } catch (err) {
       logger.error('mobile', 'transcribe failed', { error: err.message });
+      res.json({ ok: false, error: err.message });
+    }
+  });
+
+  // Gmail connection status for the app (shows "Connect Gmail" if not linked).
+  mobile.get('/gmail-status', (_req, res) => {
+    res.json({ ok: true, configured: google.isConfigured(), connected: google.isConnected() });
+  });
+
+  // Send an email to a resolved address. Used when the agent named a CONTACT and
+  // the app looked up that contact's email on the device.
+  mobile.post('/send-email', async (req, res) => {
+    const { to, subject, body } = req.body || {};
+    if (!to || !subject || body === undefined) {
+      return res.status(400).json({ ok: false, error: 'to, subject, body required' });
+    }
+    if (!google.isConnected()) return res.json({ ok: false, error: 'Gmail not connected.' });
+    try {
+      await google.sendEmail({ to, subject, body });
+      res.json({ ok: true });
+    } catch (err) {
+      logger.error('mobile', 'send-email failed', { error: err.message });
       res.json({ ok: false, error: err.message });
     }
   });
@@ -112,6 +187,7 @@ export function createServer() {
     openai: openai.testConnection,
     twilio: twilioSvc.testConnection,
     uber: uber.testConnection,
+    gmail: google.testConnection,
   };
   api.post('/test/:service', async (req, res) => {
     const tester = TESTERS[req.params.service];
@@ -186,6 +262,18 @@ export function createServer() {
   app.use('/', express.static(PUBLIC_DIR));
 
   return app;
+}
+
+// Minimal HTML page shown after the Google OAuth redirect.
+function authPage(message, ok) {
+  return `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gmail connection</title>
+<style>body{font-family:system-ui;background:#0f1115;color:#e7e9ee;display:flex;align-items:center;
+justify-content:center;height:100vh;margin:0;text-align:center;padding:24px}
+.card{background:#171a21;border:1px solid #2a2f3a;border-radius:14px;padding:28px;max-width:360px}
+.ok{color:#25d366}.err{color:#ef4444}</style></head>
+<body><div class="card"><h2 class="${ok ? 'ok' : 'err'}">${ok ? 'Success' : 'Problem'}</h2>
+<p>${message}</p></div></body></html>`;
 }
 
 // Mobile-app gate. The app sends X-App-Token. If APP_TOKEN is unset, allow (dev).

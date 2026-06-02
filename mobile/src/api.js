@@ -43,3 +43,21 @@ export function interpret(text) {
 export function transcribe(base64, mimetype = 'audio/m4a', filename = 'voice.m4a') {
   return post('/mobile/transcribe', { base64, mimetype, filename });
 }
+
+// Send an email to a resolved address (used after looking up a contact's email).
+export function sendEmail(to, subject, body) {
+  return post('/mobile/send-email', { to, subject, body });
+}
+
+// Is Gmail connected on the server? -> { ok, configured, connected }
+export async function gmailStatus() {
+  const res = await fetch(`${BACKEND_URL}/mobile/gmail-status`, {
+    headers: { 'X-App-Token': APP_TOKEN },
+  });
+  return res.json();
+}
+
+// The URL the app opens in a browser to connect Gmail.
+export function gmailAuthUrl() {
+  return `${BACKEND_URL}/auth/google`;
+}

@@ -14,16 +14,16 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
+  StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Linking,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Audio } from 'expo-av';
 import * as Notifications from 'expo-notifications';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { interpret, transcribe } from './src/api.js';
+import { interpret, transcribe, sendEmail, gmailAuthUrl } from './src/api.js';
 import {
-  findContactPhone, openWhatsApp, createEvent, eventsForDate, scheduleReminder,
+  findContactPhone, findContactEmail, openWhatsApp, createEvent, eventsForDate, scheduleReminder,
 } from './src/actions.js';
 
 // Local-notification handler. Wrapped in try/catch because Expo Go (SDK 53+)
@@ -45,6 +45,11 @@ function fmtTime(d) {
 function fmtDay(d) {
   return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
 }
+// "Ramesh Kumar <ramesh@x.com>" -> "Ramesh Kumar"; "a@b.com" -> "a@b.com"
+function cleanFrom(from) {
+  const m = String(from).match(/^\s*"?([^"<]+?)"?\s*</);
+  return (m ? m[1] : from).trim();
+}
 
 export default function App() {
   return (
@@ -57,7 +62,7 @@ export default function App() {
 function AssistantScreen() {
   const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState([
-    { role: 'bot', text: 'Hi! I\'m your assistant 👋\nTry:\n• "Text Ramesh good morning"\n• "Set a meeting with Ramesh tomorrow 5pm"\n• "How many meetings today?"\n• "Note: client wants blue packaging"\n• "Show my notes"' },
+    { role: 'bot', text: 'Hi! I\'m your assistant 👋\nTry:\n• "Text Ramesh good morning"\n• "Set a meeting with Ramesh tomorrow 5pm"\n• "How many meetings today?"\n• "Who emailed me today?"\n• "Email Ramesh that the order shipped"\n• "Note: client wants blue packaging"' },
   ]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -70,6 +75,22 @@ function AssistantScreen() {
 
   function add(role, text) {
     setMessages((m) => [...m, { role, text }]);
+  }
+
+  // Open the server's Google sign-in page in the browser.
+  function connectGmail() {
+    Linking.openURL(gmailAuthUrl());
+  }
+  function promptConnectGmail() {
+    add('bot', '📧 To use email, connect your Gmail first.');
+    Alert.alert(
+      'Connect Gmail',
+      'Sign in with Google to let the assistant read and send your email.',
+      [
+        { text: 'Not now', style: 'cancel' },
+        { text: 'Connect Gmail', onPress: connectGmail },
+      ],
+    );
   }
 
   // ---- Execute the action returned by the backend ---------------------------
@@ -114,6 +135,30 @@ function AssistantScreen() {
         if (!notes.length) { add('bot', 'You have no notes yet. 📭'); return; }
         const lines = notes.map((n, i) => `${i + 1}. ${n.text}`).join('\n');
         add('bot', `📝 Your notes:\n${lines}`);
+
+      } else if (tool === 'check_email') {
+        const d = result.data || {};
+        if (d.needsGmail) { promptConnectGmail(); return; }
+        if (d.emailError) { add('bot', `⚠️ ${d.emailError}`); return; }
+        const mails = d.emails || [];
+        if (!mails.length) { add('bot', 'No new emails. 📭'); return; }
+        const lines = mails.map((m) => `• ${cleanFrom(m.from)} — ${m.subject}`).join('\n');
+        add('bot', `📧 ${mails.length} recent email${mails.length > 1 ? 's' : ''}:\n${lines}`);
+
+      } else if (tool === 'send_email') {
+        const d = result.data || {};
+        if (d.needsGmail) { promptConnectGmail(); return; }
+        if (d.emailError) { add('bot', `⚠️ ${d.emailError}`); return; }
+        if (d.emailSent) { add('bot', `📤 Email sent to ${d.emailSent.to}.`); return; }
+        // Recipient was a NAME — resolve their email from contacts, then send.
+        if (d.resolveContactEmail) {
+          const { name, subject, body } = d.resolveContactEmail;
+          const c = await findContactEmail(name);
+          if (!c.found) { add('bot', `I couldn't find "${name}" in your contacts.`); return; }
+          if (!c.email) { add('bot', `${c.name} has no email saved in your contacts.`); return; }
+          const r = await sendEmail(c.email, subject, body);
+          add('bot', r.ok ? `📤 Email sent to ${c.name} (${c.email}).` : `⚠️ ${r.error}`);
+        }
 
       } // 'reply' needs nothing beyond a.say
     } catch (err) {
@@ -174,8 +219,15 @@ function AssistantScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <Text style={styles.title}>Varun Assistant</Text>
-        <Text style={styles.subtitle}>English · हिंदी · Hinglish</Text>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.title}>Varun Assistant</Text>
+            <Text style={styles.subtitle}>English · हिंदी · Hinglish</Text>
+          </View>
+          <TouchableOpacity style={styles.gmailBtn} onPress={connectGmail}>
+            <Text style={styles.gmailBtnText}>Connect Gmail</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView ref={scrollRef} style={styles.chat} contentContainerStyle={{ padding: 14 }}>
@@ -214,6 +266,9 @@ function AssistantScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f1115' },
   header: { paddingBottom: 14, paddingHorizontal: 18, backgroundColor: '#171a21', borderBottomWidth: 1, borderBottomColor: '#2a2f3a' },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  gmailBtn: { backgroundColor: '#1f2430', borderWidth: 1, borderColor: '#25d366', borderRadius: 8, paddingVertical: 6, paddingHorizontal: 12 },
+  gmailBtnText: { color: '#25d366', fontSize: 12, fontWeight: '600' },
   title: { color: '#e7e9ee', fontSize: 19, fontWeight: '700' },
   subtitle: { color: '#25d366', fontSize: 12, marginTop: 2 },
   chat: { flex: 1 },

@@ -32,6 +32,24 @@ export async function findContactPhone(name) {
   return { found: true, name: match.name, phone };
 }
 
+// Find a contact's email by (fuzzy) name.
+export async function findContactEmail(name) {
+  const { status } = await Contacts.requestPermissionsAsync();
+  if (status !== 'granted') throw new Error('Contacts permission denied.');
+
+  const { data } = await Contacts.getContactsAsync({
+    fields: [Contacts.Fields.Name, Contacts.Fields.Emails],
+  });
+  const needle = name.trim().toLowerCase();
+  const match =
+    data.find((c) => (c.name || '').toLowerCase() === needle) ||
+    data.find((c) => (c.name || '').toLowerCase().startsWith(needle)) ||
+    data.find((c) => (c.name || '').toLowerCase().includes(needle));
+  if (!match) return { found: false };
+  const email = match.emails?.[0]?.email;
+  return { found: true, name: match.name, email: email || null };
+}
+
 // Normalise a phone to digits for wa.me (strip +, spaces, dashes).
 function waNumber(phone) {
   return String(phone).replace(/[^\d]/g, '');

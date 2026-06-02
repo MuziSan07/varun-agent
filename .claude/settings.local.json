@@ -35,7 +35,13 @@
       "Bash(curl -s -m 40 -X POST https://206.189.207.59.nip.io/api/agent/test -H \"Content-Type: application/json\" -H \"Authorization: Bearer varun-dev-9f3k2m\" -d '{\"text\":\"Add a contact named Ali with number +923554458467\",\"from\":\"whatsapp:+919910827999\"}')",
       "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{try{const j=JSON.parse\\(d\\);console.log\\(j.reply||j.error\\)}catch\\(e\\){console.log\\(d.slice\\(0,300\\)\\)}}\\)\")",
       "Bash(git -c user.email=\"dev@local\" -c user.name=\"dev\" commit -q -m \"Add mobile app \\(Expo iOS+Android\\) + /mobile interpret & transcribe API\")",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(node --check src/services/google.js)",
+      "Bash(node --check src/server.js)",
+      "Bash(node --check src/config.js)",
+      "Bash(node --check src/agent/mobileAgent.js)",
+      "Bash(node --check mobile/App.js)",
+      "Bash(git -c user.email=\"dev@local\" -c user.name=\"dev\" commit -q -m \"Add Gmail integration: OAuth login, check inbox, send email \\(read+send\\) via mobile agent\")"
     ]
   }
 }

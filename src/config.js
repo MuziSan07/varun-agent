@@ -82,6 +82,11 @@ export const config = {
     sandboxBaseUrl: env('UBER_SANDBOX_BASE_URL') || 'https://sandbox-api.uber.com',
     liveBaseUrl: env('UBER_LIVE_BASE_URL') || 'https://api.uber.com',
   },
+
+  google: {
+    clientId: env('GOOGLE_CLIENT_ID'),
+    clientSecret: env('GOOGLE_CLIENT_SECRET'),
+  },
 };
 
 // Which WhatsApp "from" address to use given the current mode.

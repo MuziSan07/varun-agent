@@ -90,6 +90,38 @@ const TOOLS = [
     },
   },
   {
+    name: 'check_email',
+    description:
+      'User wants to know about recent emails / who emailed them (e.g. "who ' +
+      'mailed me today", "any new emails", "check my inbox", "aaj kisne mail ' +
+      'kiya"). Optionally a number of days to look back.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        days: { type: 'integer', description: 'How many days back to look (default 1 = today).' },
+        say: { type: 'string', description: 'Short lead-in in the user\'s language, e.g. "Checking your inbox…".' },
+      },
+      required: ['say'],
+    },
+  },
+  {
+    name: 'send_email',
+    description:
+      'User wants to send/write an email to someone (e.g. "email Ramesh that the ' +
+      'order shipped", "mail bhejo John ko"). Provide the recipient as the user ' +
+      'named them (a name OR an email address), a subject, and the body.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        to: { type: 'string', description: 'Recipient: an email address, or a contact name to look up.' },
+        subject: { type: 'string', description: 'A short, sensible subject line.' },
+        body: { type: 'string', description: 'The email body, written naturally.' },
+        say: { type: 'string', description: 'Short friendly confirmation in the user\'s language.' },
+      },
+      required: ['to', 'subject', 'body', 'say'],
+    },
+  },
+  {
     name: 'query_calendar',
     description:
       'User is asking about their schedule/meetings (e.g. "how many meetings ' +
@@ -135,6 +167,8 @@ function systemPrompt(nowISO) {
     `- "remind me ..." -> set_reminder.`,
     `- "note / remember / jot down / likh lo ..." -> save_note.`,
     `- "show/read my notes ..." -> list_notes.`,
+    `- "who mailed me / any new email / check inbox ..." -> check_email.`,
+    `- "email/mail <someone> ..." -> send_email.`,
     `- "how many meetings / what's on my calendar / schedule ..." -> query_calendar.`,
     `- Anything else (greetings, questions, unclear) -> reply.`,
   ].join('\n');
