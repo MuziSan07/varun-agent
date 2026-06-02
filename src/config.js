@@ -44,6 +44,9 @@ function env(name) {
 export const config = {
   port: parseInt(process.env.PORT || '3000', 10),
   dashboardToken: env('DASHBOARD_TOKEN'),
+  // Shared secret the mobile app sends as X-App-Token. Keeps the /mobile API
+  // from being open to the world.
+  appToken: env('APP_TOKEN'),
   publicBaseUrl: env('PUBLIC_BASE_URL'),
   // Webhook signature checking is OPT-IN. Recommended ON in production, but off by
   // default so local/sandbox testing through tunnels never fails on a URL mismatch

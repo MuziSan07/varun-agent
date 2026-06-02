@@ -10,6 +10,7 @@ import { logger } from './logger.js';
 import { getSetting, setSetting } from './store/store.js';
 import { handleInboundWhatsApp, validateTwilioSignature } from './whatsapp/webhook.js';
 import { runAgent } from './agent/agent.js';
+import { interpret } from './agent/mobileAgent.js';
 import { transcribe } from './services/openai.js';
 import { toFile } from 'openai';
 
@@ -32,6 +33,45 @@ export function createServer() {
   app.post('/webhook/whatsapp', validateTwilioSignature, handleInboundWhatsApp);
 
   app.get('/health', (_req, res) => res.json({ ok: true, mode: getMode() }));
+
+  // ---- Mobile app API (token-protected via X-App-Token) --------------------
+  // The mobile app does NOT execute tools on the server — it sends the user's
+  // text/voice here, Claude interprets it into ONE structured action, and the
+  // APP performs it on-device using the user's own permissions (contacts,
+  // calendar, notifications, WhatsApp deep-link). Keys stay on the server.
+  const mobile = express.Router();
+  mobile.use(appAuth);
+
+  // Interpret a typed/spoken instruction -> { tool, input }.
+  mobile.post('/interpret', async (req, res) => {
+    const { text, nowISO } = req.body || {};
+    if (!text) return res.status(400).json({ ok: false, error: 'text is required' });
+    try {
+      const result = await interpret({ text, nowISO });
+      logger.info('mobile', 'interpret', { tool: result.tool });
+      res.json(result);
+    } catch (err) {
+      logger.error('mobile', 'interpret failed', { error: err.message });
+      res.json({ ok: false, error: err.message });
+    }
+  });
+
+  // Transcribe a voice note (base64 audio) -> text. Then the app calls /interpret.
+  mobile.post('/transcribe', async (req, res) => {
+    const { base64, filename, mimetype } = req.body || {};
+    if (!base64) return res.status(400).json({ ok: false, error: 'base64 audio is required' });
+    try {
+      const buf = Buffer.from(base64, 'base64');
+      const file = await toFile(buf, filename || 'audio.m4a', { type: mimetype || 'audio/m4a' });
+      const text = await transcribe(file);
+      res.json({ ok: true, text });
+    } catch (err) {
+      logger.error('mobile', 'transcribe failed', { error: err.message });
+      res.json({ ok: false, error: err.message });
+    }
+  });
+
+  app.use('/mobile', mobile);
 
   // ---- Dashboard API (token-protected) -------------------------------------
   const api = express.Router();
@@ -131,6 +171,14 @@ export function createServer() {
   app.use('/', express.static(PUBLIC_DIR));
 
   return app;
+}
+
+// Mobile-app gate. The app sends X-App-Token. If APP_TOKEN is unset, allow (dev).
+function appAuth(req, res, next) {
+  if (!config.appToken) return next();
+  const token = req.headers['x-app-token'] || req.query.appToken;
+  if (token === config.appToken) return next();
+  return res.status(401).json({ ok: false, error: 'Unauthorized: invalid app token.' });
 }
 
 // Simple bearer/token gate. If DASHBOARD_TOKEN is unset, the dashboard is open

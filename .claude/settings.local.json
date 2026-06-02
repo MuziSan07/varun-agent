@@ -23,7 +23,18 @@
       "Bash(rm -f b.txt be.txt)",
       "Bash(git rm *)",
       "Bash(printf \"\\\\n# stray temp files\\\\nb.txt\\\\nbe.txt\\\\n*.tmp\\\\n\")",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git -c user.email=\"dev@local\" -c user.name=\"dev\" commit -q -m \"Initial commit: WhatsApp AI assistant agent\")",
+      "Bash(git branch *)",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{try{const j=JSON.parse\\(d\\);if\\(!j.senders||!j.senders.length\\){console.log\\('NONE registered \\(only sandbox available\\)'\\)}else{j.senders.forEach\\(s=>console.log\\(s.sender_id,'| status:',s.status\\)\\)}}catch\\(e\\){console.log\\('RESP:',d.slice\\(0,400\\)\\)}}\\)\")",
+      "Bash(curl -s -m 15 https://206.189.207.59.nip.io/health)",
+      "Bash(curl -s -m 20 -o /dev/null -w \"webhook HTTP=%{http_code}\\\\n\" -X POST https://206.189.207.59.nip.io/webhook/whatsapp -d \"From=whatsapp:+919910827999&Body=ping&NumMedia=0\")",
+      "Bash(curl -s -m 15 -X POST https://206.189.207.59.nip.io/api/mode -H \"Content-Type: application/json\" -H \"Authorization: Bearer varun-dev-9f3k2m\" -d '{\"mode\":\"SANDBOX\"}')",
+      "Bash(curl -s -m 40 -X POST https://206.189.207.59.nip.io/api/agent/test -H \"Content-Type: application/json\" -H \"Authorization: Bearer varun-dev-9f3k2m\" -d '{\"text\":\"Add a contact named Ali with number +923554458467\",\"from\":\"whatsapp:+919910827999\"}')",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{try{const j=JSON.parse\\(d\\);console.log\\(j.reply||j.error\\)}catch\\(e\\){console.log\\(d.slice\\(0,300\\)\\)}}\\)\")",
+      "Bash(git -c user.email=\"dev@local\" -c user.name=\"dev\" commit -q -m \"Add mobile app \\(Expo iOS+Android\\) + /mobile interpret & transcribe API\")"
     ]
   }
 }

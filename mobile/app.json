@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "Varun Assistant",
+    "slug": "varun-assistant",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "backgroundColor": "#0f1115"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.varun.assistant",
+      "infoPlist": {
+        "NSContactsUsageDescription": "Used to find the people you ask the assistant to message.",
+        "NSCalendarsUsageDescription": "Used to read your meetings and add events you ask for.",
+        "NSMicrophoneUsageDescription": "Used to record voice notes for the assistant.",
+        "NSCalendarsFullAccessUsageDescription": "Used to read your meetings and add events you ask for.",
+        "NSContactsFullAccessUsageDescription": "Used to find the people you ask the assistant to message."
+      }
+    },
+    "android": {
+      "package": "com.varun.assistant",
+      "permissions": [
+        "READ_CONTACTS",
+        "READ_CALENDAR",
+        "WRITE_CALENDAR",
+        "RECORD_AUDIO",
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "plugins": [
+      "expo-contacts",
+      "expo-calendar",
+      "expo-notifications",
+      [
+        "expo-av",
+        { "microphonePermission": "Allow the assistant to record voice notes." }
+      ]
+    ]
+  }
+}

@@ -1,0 +1,133 @@
+// -----------------------------------------------------------------------------
+// Mobile agent "interpreter".
+//
+// Unlike the WhatsApp agent (which EXECUTES tools on the server), the mobile app
+// executes actions ON THE DEVICE using the user's own permissions (contacts,
+// calendar, notifications, WhatsApp). So here Claude's job is only to UNDERSTAND
+// the request and return ONE structured action for the app to carry out.
+//
+// Claude is forced to call exactly one tool; we return {tool, input} as JSON.
+// Each tool includes a `say` field — a short, friendly confirmation in the SAME
+// language/style the user used (English / Hindi / Hinglish).
+// -----------------------------------------------------------------------------
+import { createMessage } from '../services/claude.js';
+import { config } from '../config.js';
+
+const TOOLS = [
+  {
+    name: 'send_whatsapp',
+    description:
+      'User wants to send a WhatsApp message to someone in their contacts. ' +
+      'Extract the contact NAME as the user said it and the message body.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        contactName: { type: 'string', description: 'The person to message, e.g. "Ramesh".' },
+        message: { type: 'string', description: 'The message body to send.' },
+        say: { type: 'string', description: 'Short friendly confirmation in the user\'s language.' },
+      },
+      required: ['contactName', 'message', 'say'],
+    },
+  },
+  {
+    name: 'create_calendar_event',
+    description:
+      'User wants to schedule a meeting / event. Convert any relative time ' +
+      '("tomorrow 5pm", "kal subah 9 baje") into an absolute ISO 8601 timestamp ' +
+      'using the provided current date/time.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'Event title, e.g. "Meeting with Ramesh".' },
+        startISO: { type: 'string', description: 'Absolute start time, ISO 8601.' },
+        durationMinutes: { type: 'integer', description: 'Duration in minutes (default 60).' },
+        say: { type: 'string', description: 'Short friendly confirmation in the user\'s language.' },
+      },
+      required: ['title', 'startISO', 'say'],
+    },
+  },
+  {
+    name: 'set_reminder',
+    description:
+      'User wants a reminder/notification at a specific time. Convert relative ' +
+      'time into an absolute ISO 8601 timestamp using the current date/time.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        text: { type: 'string', description: 'What to remind them about.' },
+        whenISO: { type: 'string', description: 'Absolute time, ISO 8601.' },
+        say: { type: 'string', description: 'Short friendly confirmation in the user\'s language.' },
+      },
+      required: ['text', 'whenISO', 'say'],
+    },
+  },
+  {
+    name: 'query_calendar',
+    description:
+      'User is asking about their schedule/meetings (e.g. "how many meetings ' +
+      'today", "what\'s on tomorrow"). Provide the date they are asking about.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        dateISO: { type: 'string', description: 'The date in question (ISO 8601 date, e.g. 2026-06-02).' },
+        say: { type: 'string', description: 'Short lead-in in the user\'s language, e.g. "Here\'s your day:".' },
+      },
+      required: ['dateISO', 'say'],
+    },
+  },
+  {
+    name: 'reply',
+    description: 'No actionable task — just chat / answer / clarify.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        say: { type: 'string', description: 'The reply text in the user\'s language.' },
+      },
+      required: ['say'],
+    },
+  },
+];
+
+function systemPrompt(nowISO) {
+  return [
+    `You are a personal mobile assistant for ${config.owner.name}. The user talks to`,
+    `you like a friend, in English, Hindi, or Hinglish (text or transcribed voice).`,
+    ``,
+    `CURRENT DATE/TIME (device local): ${nowISO}.`,
+    `Use this to turn relative times ("tomorrow 5pm", "kal subah 9 baje", "in 2 hours")`,
+    `into absolute ISO 8601 timestamps.`,
+    ``,
+    `Pick EXACTLY ONE tool that best matches the request and call it. Always fill the`,
+    `"say" field with a short, warm confirmation written in the SAME language/style the`,
+    `user used. Keep it brief and natural — this is a chat app.`,
+    ``,
+    `Guidance:`,
+    `- "text/message/WhatsApp <name> ..." -> send_whatsapp.`,
+    `- "set/schedule a meeting/event ..." -> create_calendar_event.`,
+    `- "remind me ..." -> set_reminder.`,
+    `- "how many meetings / what's on my calendar / schedule ..." -> query_calendar.`,
+    `- Anything else (greetings, questions, unclear) -> reply.`,
+  ].join('\n');
+}
+
+// Returns { ok, tool, input } or { ok:false, error }.
+export async function interpret({ text, nowISO }) {
+  if (!text || !text.trim()) return { ok: false, error: 'Empty message.' };
+  const now = nowISO || new Date().toISOString();
+
+  const res = await createMessage({
+    max_tokens: 600,
+    system: systemPrompt(now),
+    tools: TOOLS,
+    tool_choice: { type: 'any' }, // force a tool call
+    messages: [{ role: 'user', content: text }],
+  });
+
+  const toolUse = res.content.find((b) => b.type === 'tool_use');
+  if (!toolUse) {
+    // Fallback: treat any text as a reply.
+    const txt = res.content.filter((b) => b.type === 'text').map((b) => b.text).join(' ').trim();
+    return { ok: true, tool: 'reply', input: { say: txt || 'Okay.' } };
+  }
+  return { ok: true, tool: toolUse.name, input: toolUse.input };
+}
