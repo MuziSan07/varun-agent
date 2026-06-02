@@ -8,14 +8,15 @@
     "ios": "expo start --ios"
   },
   "dependencies": {
-    "expo": "~51.0.0",
-    "expo-av": "~14.0.7",
-    "expo-calendar": "~13.0.5",
-    "expo-contacts": "~13.0.5",
-    "expo-notifications": "~0.28.19",
-    "expo-status-bar": "~1.12.1",
-    "react": "18.2.0",
-    "react-native": "0.74.5"
+    "expo": "~54.0.0",
+    "expo-av": "~16.0.7",
+    "expo-calendar": "~15.0.7",
+    "expo-contacts": "~15.0.8",
+    "expo-notifications": "~0.32.12",
+    "expo-status-bar": "~3.0.8",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-safe-area-context": "^5.6.0"
   },
   "private": true
 }

@@ -4,15 +4,30 @@
 import { BACKEND_URL, APP_TOKEN } from './config.js';
 
 async function post(path, body) {
-  const res = await fetch(`${BACKEND_URL}${path}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-App-Token': APP_TOKEN,
-    },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json().catch(() => ({ ok: false, error: 'Bad server response' }));
+  let res;
+  try {
+    res = await fetch(`${BACKEND_URL}${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-App-Token': APP_TOKEN,
+      },
+      body: JSON.stringify(body),
+    });
+  } catch (netErr) {
+    throw new Error(`Network error: ${netErr.message}`);
+  }
+
+  // Read raw text first so we can surface a useful message even if the server
+  // returned a non-JSON error page (e.g. a 413 too-large or 502).
+  const raw = await res.text();
+  let data;
+  try {
+    data = raw ? JSON.parse(raw) : {};
+  } catch {
+    const snippet = raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120);
+    throw new Error(`Server ${res.status}: ${snippet || 'non-JSON response'}`);
+  }
   if (!res.ok && data.ok === undefined) {
     throw new Error(data.error || `HTTP ${res.status}`);
   }

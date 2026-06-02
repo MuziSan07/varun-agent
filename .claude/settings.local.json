@@ -34,7 +34,8 @@
       "Bash(curl -s -m 15 -X POST https://206.189.207.59.nip.io/api/mode -H \"Content-Type: application/json\" -H \"Authorization: Bearer varun-dev-9f3k2m\" -d '{\"mode\":\"SANDBOX\"}')",
       "Bash(curl -s -m 40 -X POST https://206.189.207.59.nip.io/api/agent/test -H \"Content-Type: application/json\" -H \"Authorization: Bearer varun-dev-9f3k2m\" -d '{\"text\":\"Add a contact named Ali with number +923554458467\",\"from\":\"whatsapp:+919910827999\"}')",
       "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{try{const j=JSON.parse\\(d\\);console.log\\(j.reply||j.error\\)}catch\\(e\\){console.log\\(d.slice\\(0,300\\)\\)}}\\)\")",
-      "Bash(git -c user.email=\"dev@local\" -c user.name=\"dev\" commit -q -m \"Add mobile app \\(Expo iOS+Android\\) + /mobile interpret & transcribe API\")"
+      "Bash(git -c user.email=\"dev@local\" -c user.name=\"dev\" commit -q -m \"Add mobile app \\(Expo iOS+Android\\) + /mobile interpret & transcribe API\")",
+      "Bash(npm install *)"
     ]
   }
 }

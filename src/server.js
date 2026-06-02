@@ -25,9 +25,12 @@ const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 export function createServer() {
   const app = express();
 
-  // Twilio posts application/x-www-form-urlencoded; dashboard posts JSON.
-  app.use(express.urlencoded({ extended: false }));
-  app.use(express.json());
+  // Twilio posts application/x-www-form-urlencoded; dashboard/app post JSON.
+  // Raise the JSON limit to 25mb: the mobile app uploads base64-encoded voice
+  // notes, which far exceed the 100kb express default (caused "Bad server
+  // response" on voice). 25mb comfortably covers a minute+ of audio.
+  app.use(express.urlencoded({ extended: false, limit: '25mb' }));
+  app.use(express.json({ limit: '25mb' }));
 
   // ---- Twilio WhatsApp webhook (public) ------------------------------------
   app.post('/webhook/whatsapp', validateTwilioSignature, handleInboundWhatsApp);

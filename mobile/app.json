@@ -4,12 +4,7 @@
     "slug": "varun-assistant",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "backgroundColor": "#0f1115"
-    },
-    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.varun.assistant",

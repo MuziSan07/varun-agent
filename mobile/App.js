@@ -19,17 +19,25 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { Audio } from 'expo-av';
 import * as Notifications from 'expo-notifications';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { interpret, transcribe } from './src/api.js';
 import {
   findContactPhone, openWhatsApp, createEvent, eventsForDate, scheduleReminder,
 } from './src/actions.js';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true, shouldPlaySound: true, shouldSetBadge: false,
-  }),
-});
+// Local-notification handler. Wrapped in try/catch because Expo Go (SDK 53+)
+// strips part of the notifications module and logs noisy errors; reminders work
+// fully in a real build / dev-client. This keeps the preview clean.
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true, shouldPlaySound: true, shouldSetBadge: false,
+    }),
+  });
+} catch {
+  /* not supported in Expo Go preview — fine */
+}
 
 function fmtTime(d) {
   return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
@@ -39,6 +47,15 @@ function fmtDay(d) {
 }
 
 export default function App() {
+  return (
+    <SafeAreaProvider>
+      <AssistantScreen />
+    </SafeAreaProvider>
+  );
+}
+
+function AssistantScreen() {
+  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState([
     { role: 'bot', text: 'Hi! I\'m your assistant 👋\nTry:\n• "Text Ramesh good morning"\n• "Set a meeting with Ramesh tomorrow 5pm"\n• "How many meetings today?"\n• "Note: client wants blue packaging"\n• "Show my notes"' },
   ]);
@@ -156,7 +173,7 @@ export default function App() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <Text style={styles.title}>Varun Assistant</Text>
         <Text style={styles.subtitle}>English · हिंदी · Hinglish</Text>
       </View>
@@ -171,7 +188,7 @@ export default function App() {
       </ScrollView>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={styles.inputRow}>
+        <View style={[styles.inputRow, { paddingBottom: Math.max(insets.bottom, 10) + 6 }]}>
           <TouchableOpacity style={[styles.mic, recording && styles.micActive]} onPress={toggleRecord}>
             <Text style={styles.micIcon}>{recording ? '⏹️' : '🎙️'}</Text>
           </TouchableOpacity>
@@ -196,7 +213,7 @@ export default function App() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f1115' },
-  header: { paddingTop: 56, paddingBottom: 14, paddingHorizontal: 18, backgroundColor: '#171a21', borderBottomWidth: 1, borderBottomColor: '#2a2f3a' },
+  header: { paddingBottom: 14, paddingHorizontal: 18, backgroundColor: '#171a21', borderBottomWidth: 1, borderBottomColor: '#2a2f3a' },
   title: { color: '#e7e9ee', fontSize: 19, fontWeight: '700' },
   subtitle: { color: '#25d366', fontSize: 12, marginTop: 2 },
   chat: { flex: 1 },
@@ -205,7 +222,7 @@ const styles = StyleSheet.create({
   bot: { alignSelf: 'flex-start', backgroundColor: '#1f2430', borderBottomLeftRadius: 3 },
   userText: { color: '#06281a', fontSize: 15 },
   botText: { color: '#e7e9ee', fontSize: 15 },
-  inputRow: { flexDirection: 'row', alignItems: 'center', padding: 10, backgroundColor: '#171a21', borderTopWidth: 1, borderTopColor: '#2a2f3a' },
+  inputRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingTop: 10, backgroundColor: '#171a21', borderTopWidth: 1, borderTopColor: '#2a2f3a' },
   input: { flex: 1, backgroundColor: '#0f1115', color: '#e7e9ee', borderRadius: 22, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, marginHorizontal: 8, borderWidth: 1, borderColor: '#2a2f3a' },
   mic: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#1f2430', alignItems: 'center', justifyContent: 'center' },
   micActive: { backgroundColor: '#ef4444' },
