@@ -38,12 +38,18 @@ function creds() {
   };
 }
 
+// Strip common paste mistakes: leading scheme, surrounding spaces/quotes.
+function cleanId(v) {
+  if (!v) return v;
+  return String(v).trim().replace(/^["']|["']$/g, '').replace(/^https?:\/\//i, '').trim();
+}
+
 export function setCreds({ clientId, clientSecret }) {
   const cur = getSetting(CREDS_KEY) || {};
   setSetting(CREDS_KEY, {
-    clientId: clientId !== undefined ? clientId : cur.clientId,
+    clientId: clientId !== undefined ? cleanId(clientId) : cur.clientId,
     // allow leaving secret unchanged by sending an empty string
-    clientSecret: clientSecret ? clientSecret : cur.clientSecret,
+    clientSecret: clientSecret ? String(clientSecret).trim() : cur.clientSecret,
   });
   logger.info('google', 'Gmail credentials updated via settings');
 }

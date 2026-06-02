@@ -41,7 +41,16 @@
       "Bash(node --check src/config.js)",
       "Bash(node --check src/agent/mobileAgent.js)",
       "Bash(node --check mobile/App.js)",
-      "Bash(git -c user.email=\"dev@local\" -c user.name=\"dev\" commit -q -m \"Add Gmail integration: OAuth login, check inbox, send email \\(read+send\\) via mobile agent\")"
+      "Bash(git -c user.email=\"dev@local\" -c user.name=\"dev\" commit -q -m \"Add Gmail integration: OAuth login, check inbox, send email \\(read+send\\) via mobile agent\")",
+      "Bash(curl -s -m 15 https://206.189.207.59.nip.io/mobile/settings/gmail -H \"X-App-Token: varun-app-7h2x9q\")",
+      "Bash(curl -s -m 10 https://206.189.207.59.nip.io/health)",
+      "Bash(node -e \"const p=require\\('./node_modules/expo/package.json'\\); console.log\\('expo', p.version\\)\")",
+      "Bash(node -e \"const p=require\\('./node_modules/expo-av/package.json'\\); console.log\\('expo-av', p.version\\)\")",
+      "Bash(node -e \"const p=require\\('./node_modules/expo-notifications/package.json'\\); console.log\\('expo-notifications', p.version\\)\")",
+      "Bash(node -e \"const p=require\\('./node_modules/expo-calendar/package.json'\\); console.log\\('expo-calendar', p.version\\)\")",
+      "Bash(node -e \"const p=require\\('./node_modules/expo-contacts/package.json'\\); console.log\\('expo-contacts', p.version\\)\")",
+      "Bash(curl -s -m 15 -o /dev/null -w \"redirect-location: %{redirect_url}\\\\n\" \"https://206.189.207.59.nip.io/auth/google\")",
+      "Bash(git -c user.email=\"dev@local\" -c user.name=\"dev\" commit -q -m \"Gmail: auto-strip https:// and quotes from pasted Client ID \\(paste-safety\\)\")"
     ]
   }
 }
