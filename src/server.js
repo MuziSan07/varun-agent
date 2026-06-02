@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 import { config, getMode, setMode, serviceStatus } from './config.js';
 import { logger } from './logger.js';
-import { getSetting, setSetting } from './store/store.js';
+import { getSetting, setSetting, addNote, listNotes } from './store/store.js';
 import { handleInboundWhatsApp, validateTwilioSignature } from './whatsapp/webhook.js';
 import { runAgent } from './agent/agent.js';
 import { interpret } from './agent/mobileAgent.js';
@@ -43,11 +43,23 @@ export function createServer() {
   mobile.use(appAuth);
 
   // Interpret a typed/spoken instruction -> { tool, input }.
+  // Calendar/contacts/WhatsApp/reminder actions are executed ON THE DEVICE by the
+  // app. NOTES, however, persist on the server — so we execute those here and
+  // return the data the app should display.
   mobile.post('/interpret', async (req, res) => {
-    const { text, nowISO } = req.body || {};
+    const { text, nowISO, owner } = req.body || {};
     if (!text) return res.status(400).json({ ok: false, error: 'text is required' });
     try {
       const result = await interpret({ text, nowISO });
+      const userId = owner || config.owner.whatsapp || 'owner';
+
+      if (result.ok && result.tool === 'save_note') {
+        const note = addNote({ owner: userId, text: result.input.text });
+        result.data = { savedNote: { id: note.id, text: note.text } };
+      } else if (result.ok && result.tool === 'list_notes') {
+        result.data = { notes: listNotes(userId).map((n) => ({ id: n.id, text: n.text, createdAt: n.createdAt })) };
+      }
+
       logger.info('mobile', 'interpret', { tool: result.tool });
       res.json(result);
     } catch (err) {

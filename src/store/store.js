@@ -30,6 +30,7 @@ const DEFAULT_DB = {
   reminders: [],
   jobs: [],
   conversations: {}, // keyed by whatsapp number
+  notes: [],         // user notes captured by the assistant
   settings: {},
 };
 
@@ -128,6 +129,37 @@ export function removeContact(name) {
   db.contacts = db.contacts.filter((c) => c.name.toLowerCase() !== name.trim().toLowerCase());
   flush();
   return before !== db.contacts.length;
+}
+
+// ---- Notes ------------------------------------------------------------------
+// Notes are scoped per-user (keyed by their phone/owner id) so multiple users
+// could be supported later. For the single client, `owner` is their number.
+export function addNote({ owner, text }) {
+  ensureLoaded();
+  const note = {
+    id: id('note'),
+    owner: owner || 'owner',
+    text,
+    createdAt: new Date().toISOString(),
+  };
+  db.notes.push(note);
+  flush();
+  return note;
+}
+
+export function listNotes(owner) {
+  ensureLoaded();
+  const all = owner ? db.notes.filter((n) => n.owner === owner) : [...db.notes];
+  // newest first
+  return all.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+export function deleteNote(noteId) {
+  ensureLoaded();
+  const before = db.notes.length;
+  db.notes = db.notes.filter((n) => n.id !== noteId);
+  flush();
+  return before !== db.notes.length;
 }
 
 // ---- Reminders --------------------------------------------------------------

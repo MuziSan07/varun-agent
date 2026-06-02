@@ -62,6 +62,34 @@ const TOOLS = [
     },
   },
   {
+    name: 'save_note',
+    description:
+      'User wants to jot down / remember a note, idea, or piece of information ' +
+      '(e.g. "note that the client wants blue packaging", "remember to buy milk", ' +
+      '"likh lo: invoice pending hai"). Capture the note text cleanly.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        text: { type: 'string', description: 'The note content to save.' },
+        say: { type: 'string', description: 'Short friendly confirmation in the user\'s language.' },
+      },
+      required: ['text', 'say'],
+    },
+  },
+  {
+    name: 'list_notes',
+    description:
+      'User wants to see / read back their saved notes (e.g. "show my notes", ' +
+      '"meri notes dikhao", "what did I note down?").',
+    input_schema: {
+      type: 'object',
+      properties: {
+        say: { type: 'string', description: 'Short lead-in in the user\'s language, e.g. "Here are your notes:".' },
+      },
+      required: ['say'],
+    },
+  },
+  {
     name: 'query_calendar',
     description:
       'User is asking about their schedule/meetings (e.g. "how many meetings ' +
@@ -105,6 +133,8 @@ function systemPrompt(nowISO) {
     `- "text/message/WhatsApp <name> ..." -> send_whatsapp.`,
     `- "set/schedule a meeting/event ..." -> create_calendar_event.`,
     `- "remind me ..." -> set_reminder.`,
+    `- "note / remember / jot down / likh lo ..." -> save_note.`,
+    `- "show/read my notes ..." -> list_notes.`,
     `- "how many meetings / what's on my calendar / schedule ..." -> query_calendar.`,
     `- Anything else (greetings, questions, unclear) -> reply.`,
   ].join('\n');

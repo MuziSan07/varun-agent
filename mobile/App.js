@@ -40,7 +40,7 @@ function fmtDay(d) {
 
 export default function App() {
   const [messages, setMessages] = useState([
-    { role: 'bot', text: 'Hi! I\'m your assistant 👋\nTry: "Text Ramesh good morning", "Set a meeting with Ramesh tomorrow 5pm", or "How many meetings today?"' },
+    { role: 'bot', text: 'Hi! I\'m your assistant 👋\nTry:\n• "Text Ramesh good morning"\n• "Set a meeting with Ramesh tomorrow 5pm"\n• "How many meetings today?"\n• "Note: client wants blue packaging"\n• "Show my notes"' },
   ]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -86,6 +86,17 @@ export default function App() {
         if (!events.length) { add('bot', 'You have no meetings scheduled. 🎉'); return; }
         const lines = events.map((e) => `• ${fmtTime(e.start)} — ${e.title}`).join('\n');
         add('bot', `You have ${events.length} meeting${events.length > 1 ? 's' : ''}:\n${lines}`);
+
+      } else if (tool === 'save_note') {
+        // Saved on the server; confirmation already shown via a.say.
+        const saved = result.data?.savedNote;
+        if (saved) add('bot', `📝 Noted: “${saved.text}”`);
+
+      } else if (tool === 'list_notes') {
+        const notes = result.data?.notes || [];
+        if (!notes.length) { add('bot', 'You have no notes yet. 📭'); return; }
+        const lines = notes.map((n, i) => `${i + 1}. ${n.text}`).join('\n');
+        add('bot', `📝 Your notes:\n${lines}`);
 
       } // 'reply' needs nothing beyond a.say
     } catch (err) {
