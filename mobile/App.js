@@ -166,6 +166,14 @@ function AssistantScreen({ insets }) {
         const lines = mails.map((m) => `• ${cleanFrom(m.from)} — ${m.subject}`).join('\n');
         add('bot', `📧 ${mails.length} recent email${mails.length > 1 ? 's' : ''}:\n${lines}`);
 
+      } else if (tool === 'read_email') {
+        const d = result.data || {};
+        if (d.needsGmail) { promptConnectGmail(); return; }
+        if (d.emailError) { add('bot', `⚠️ ${d.emailError}`); return; }
+        const e = d.email;
+        if (!e || !e.found) { add('bot', "I couldn't find that email."); return; }
+        add('bot', `📩 From: ${cleanFrom(e.from)}\n📌 ${e.subject}\n\n${e.body || '(no readable text)'}`);
+
       } else if (tool === 'send_email') {
         const d = result.data || {};
         if (d.needsGmail) { promptConnectGmail(); return; }

@@ -180,6 +180,60 @@ export async function listRecent({ days = 1, max = 10 } = {}) {
   return out;
 }
 
+// Decode Gmail's base64url body part to text.
+function decodeB64Url(data) {
+  if (!data) return '';
+  const norm = data.replace(/-/g, '+').replace(/_/g, '/');
+  try { return Buffer.from(norm, 'base64').toString('utf8'); } catch { return ''; }
+}
+
+// Walk the MIME tree and pull the best plain-text body.
+function extractBody(payload) {
+  if (!payload) return '';
+  if (payload.mimeType === 'text/plain' && payload.body?.data) {
+    return decodeB64Url(payload.body.data);
+  }
+  if (payload.parts) {
+    // Prefer text/plain, fall back to text/html (stripped), then recurse.
+    const plain = payload.parts.find((p) => p.mimeType === 'text/plain' && p.body?.data);
+    if (plain) return decodeB64Url(plain.body.data);
+    const html = payload.parts.find((p) => p.mimeType === 'text/html' && p.body?.data);
+    if (html) return decodeB64Url(html.body.data).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    for (const p of payload.parts) {
+      const nested = extractBody(p);
+      if (nested) return nested;
+    }
+  }
+  if (payload.body?.data) return decodeB64Url(payload.body.data);
+  return '';
+}
+
+// Find ONE email matching a free-text query (sender name, subject words, etc.)
+// and return its full content. Returns { found, from, subject, date, body }.
+export async function readEmail({ query, days = 30 }) {
+  const token = await getAccessToken();
+  // Gmail search: the user's words + a recency bound to keep it relevant.
+  const q = encodeURIComponent(`${query} newer_than:${days}d -in:chats`);
+  const listRes = await fetch(`${GMAIL}/messages?q=${q}&maxResults=1`, { headers: authHeader(token) });
+  const list = await listRes.json();
+  if (!listRes.ok) throw new Error(list.error?.message || 'Gmail search failed');
+  if (!list.messages || !list.messages.length) return { found: false };
+
+  const mRes = await fetch(`${GMAIL}/messages/${list.messages[0].id}?format=full`, { headers: authHeader(token) });
+  const m = await mRes.json();
+  if (!mRes.ok) throw new Error(m.error?.message || 'Gmail read failed');
+  const headers = Object.fromEntries((m.payload?.headers || []).map((h) => [h.name.toLowerCase(), h.value]));
+  let body = extractBody(m.payload) || m.snippet || '';
+  if (body.length > 1500) body = body.slice(0, 1500) + '…';
+  return {
+    found: true,
+    from: headers.from || '(unknown sender)',
+    subject: headers.subject || '(no subject)',
+    date: headers.date || '',
+    body: body.trim(),
+  };
+}
+
 // Send an email via Gmail. Returns { id }.
 export async function sendEmail({ to, subject, body }) {
   const token = await getAccessToken();

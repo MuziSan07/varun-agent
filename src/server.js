@@ -97,6 +97,16 @@ export function createServer() {
             result.data = { emailError: err.message };
           }
         }
+      } else if (result.ok && result.tool === 'read_email') {
+        if (!google.isConnected()) {
+          result.data = { needsGmail: true };
+        } else {
+          try {
+            result.data = { email: await google.readEmail({ query: result.input.query }) };
+          } catch (err) {
+            result.data = { emailError: err.message };
+          }
+        }
       } else if (result.ok && result.tool === 'send_email') {
         // If the recipient is already an email address, the server sends it now.
         // If it's a NAME, tell the app to resolve the contact's email and call

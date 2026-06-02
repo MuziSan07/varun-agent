@@ -105,6 +105,22 @@ const TOOLS = [
     },
   },
   {
+    name: 'read_email',
+    description:
+      'User wants to OPEN / READ a specific email in full (e.g. "open the Upwork ' +
+      'email", "read Sajjad Hyder\'s email", "what did Ramesh say in his mail"). ' +
+      'Provide a search query built from whatever the user named — a sender name, ' +
+      'company, or subject keywords.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search terms: sender name, company, and/or subject words.' },
+        say: { type: 'string', description: 'Short lead-in in the user\'s language, e.g. "Opening that email…".' },
+      },
+      required: ['query', 'say'],
+    },
+  },
+  {
     name: 'send_email',
     description:
       'User wants to send/write an email to someone (e.g. "email Ramesh that the ' +
@@ -168,6 +184,7 @@ function systemPrompt(nowISO) {
     `- "note / remember / jot down / likh lo ..." -> save_note.`,
     `- "show/read my notes ..." -> list_notes.`,
     `- "who mailed me / any new email / check inbox ..." -> check_email.`,
+    `- "open/read <the X> email / what did <person> say ..." -> read_email.`,
     `- "email/mail <someone> ..." -> send_email.`,
     `- "how many meetings / what's on my calendar / schedule ..." -> query_calendar.`,
     `- Anything else (greetings, questions, unclear) -> reply.`,
