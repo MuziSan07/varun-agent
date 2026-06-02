@@ -26,6 +26,38 @@ const SCOPES = [
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GMAIL = 'https://gmail.googleapis.com/gmail/v1/users/me';
 const SETTING_KEY = 'google_tokens';
+const CREDS_KEY = 'google_creds';
+
+// Credentials resolve from the store FIRST (entered via the app Settings tab),
+// then fall back to .env. This lets the client manage them without server access.
+function creds() {
+  const stored = getSetting(CREDS_KEY) || {};
+  return {
+    clientId: stored.clientId || config.google.clientId,
+    clientSecret: stored.clientSecret || config.google.clientSecret,
+  };
+}
+
+export function setCreds({ clientId, clientSecret }) {
+  const cur = getSetting(CREDS_KEY) || {};
+  setSetting(CREDS_KEY, {
+    clientId: clientId !== undefined ? clientId : cur.clientId,
+    // allow leaving secret unchanged by sending an empty string
+    clientSecret: clientSecret ? clientSecret : cur.clientSecret,
+  });
+  logger.info('google', 'Gmail credentials updated via settings');
+}
+
+// For the app: show whether creds exist + a masked id, never the secret.
+export function credsStatus() {
+  const c = creds();
+  return {
+    hasClientId: !!c.clientId,
+    hasClientSecret: !!c.clientSecret,
+    clientIdMasked: c.clientId ? `${c.clientId.slice(0, 12)}…${c.clientId.slice(-12)}` : null,
+    redirectUri: redirectUri(),
+  };
+}
 
 function redirectUri() {
   // Must EXACTLY match an Authorized redirect URI in the Google Cloud console.
@@ -34,7 +66,8 @@ function redirectUri() {
 }
 
 export function isConfigured() {
-  return !!(config.google.clientId && config.google.clientSecret);
+  const c = creds();
+  return !!(c.clientId && c.clientSecret);
 }
 
 export function isConnected() {
@@ -45,7 +78,7 @@ export function isConnected() {
 // Build the URL the app opens in a browser for the user to sign in.
 export function getAuthUrl() {
   const params = new URLSearchParams({
-    client_id: config.google.clientId,
+    client_id: creds().clientId,
     redirect_uri: redirectUri(),
     response_type: 'code',
     scope: SCOPES,
@@ -58,10 +91,11 @@ export function getAuthUrl() {
 
 // Exchange the ?code from the callback for tokens; persist the refresh token.
 export async function exchangeCode(code) {
+  const c = creds();
   const body = new URLSearchParams({
     code,
-    client_id: config.google.clientId,
-    client_secret: config.google.clientSecret,
+    client_id: c.clientId,
+    client_secret: c.clientSecret,
     redirect_uri: redirectUri(),
     grant_type: 'authorization_code',
   });
@@ -90,9 +124,10 @@ async function getAccessToken() {
   if (!t || !t.refresh_token) throw new Error('Gmail not connected. Tap "Connect Gmail" in the app first.');
   if (t.access_token && t.expiry && Date.now() < t.expiry - 60000) return t.access_token;
 
+  const c = creds();
   const body = new URLSearchParams({
-    client_id: config.google.clientId,
-    client_secret: config.google.clientSecret,
+    client_id: c.clientId,
+    client_secret: c.clientSecret,
     refresh_token: t.refresh_token,
     grant_type: 'refresh_token',
   });

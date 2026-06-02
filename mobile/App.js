@@ -25,6 +25,7 @@ import { interpret, transcribe, sendEmail, gmailAuthUrl } from './src/api.js';
 import {
   findContactPhone, findContactEmail, openWhatsApp, createEvent, eventsForDate, scheduleReminder,
 } from './src/actions.js';
+import SettingsScreen from './src/SettingsScreen.js';
 
 // Local-notification handler. Wrapped in try/catch because Expo Go (SDK 53+)
 // strips part of the notifications module and logs noisy errors; reminders work
@@ -54,13 +55,33 @@ function cleanFrom(from) {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <AssistantScreen />
+      <Root />
     </SafeAreaProvider>
   );
 }
 
-function AssistantScreen() {
+function Root() {
   const insets = useSafeAreaInsets();
+  const [tab, setTab] = useState('chat');
+  return (
+    <View style={{ flex: 1, backgroundColor: '#0f1115' }}>
+      <StatusBar style="light" />
+      <View style={{ flex: 1 }}>
+        {tab === 'chat' ? <AssistantScreen insets={insets} /> : <SettingsScreen insets={insets} />}
+      </View>
+      <View style={[styles.tabBar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+        <TouchableOpacity style={styles.tab} onPress={() => setTab('chat')}>
+          <Text style={[styles.tabText, tab === 'chat' && styles.tabActive]}>💬 Chat</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.tab} onPress={() => setTab('settings')}>
+          <Text style={[styles.tabText, tab === 'settings' && styles.tabActive]}>⚙️ Settings</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+function AssistantScreen({ insets }) {
   const [messages, setMessages] = useState([
     { role: 'bot', text: 'Hi! I\'m your assistant 👋\nTry:\n• "Text Ramesh good morning"\n• "Set a meeting with Ramesh tomorrow 5pm"\n• "How many meetings today?"\n• "Who emailed me today?"\n• "Email Ramesh that the order shipped"\n• "Note: client wants blue packaging"' },
   ]);
@@ -217,7 +238,6 @@ function AssistantScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="light" />
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <View style={styles.headerRow}>
           <View>
@@ -284,6 +304,10 @@ const styles = StyleSheet.create({
   micIcon: { fontSize: 18 },
   send: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#25d366', alignItems: 'center', justifyContent: 'center' },
   sendIcon: { color: '#06281a', fontSize: 18, fontWeight: '700' },
+  tabBar: { flexDirection: 'row', backgroundColor: '#171a21', borderTopWidth: 1, borderTopColor: '#2a2f3a', paddingTop: 8 },
+  tab: { flex: 1, alignItems: 'center', paddingVertical: 6 },
+  tabText: { color: '#7b8494', fontSize: 13, fontWeight: '600' },
+  tabActive: { color: '#25d366' },
 });
 
 // Read a recording file URI into base64 for upload.

@@ -144,6 +144,27 @@ export function createServer() {
     res.json({ ok: true, configured: google.isConfigured(), connected: google.isConnected() });
   });
 
+  // ---- Settings: Gmail credentials (entered by the client in the app) -------
+  // Returns masked status (never the secret) + the exact redirect URI to paste
+  // into Google Cloud Console.
+  mobile.get('/settings/gmail', (_req, res) => {
+    res.json({ ok: true, ...google.credsStatus(), connected: google.isConnected() });
+  });
+
+  // Save the client's own Client ID + Secret.
+  mobile.post('/settings/gmail', (req, res) => {
+    const { clientId, clientSecret } = req.body || {};
+    if (!clientId) return res.status(400).json({ ok: false, error: 'clientId is required' });
+    google.setCreds({ clientId: clientId.trim(), clientSecret: (clientSecret || '').trim() });
+    res.json({ ok: true, ...google.credsStatus() });
+  });
+
+  // Disconnect the linked Gmail account (keeps creds, drops tokens).
+  mobile.post('/settings/gmail/disconnect', (_req, res) => {
+    google.disconnect();
+    res.json({ ok: true });
+  });
+
   // Send an email to a resolved address. Used when the agent named a CONTACT and
   // the app looked up that contact's email on the device.
   mobile.post('/send-email', async (req, res) => {

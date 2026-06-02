@@ -61,3 +61,19 @@ export async function gmailStatus() {
 export function gmailAuthUrl() {
   return `${BACKEND_URL}/auth/google`;
 }
+
+// ---- Settings: Gmail credentials -------------------------------------------
+export async function getGmailSettings() {
+  const res = await fetch(`${BACKEND_URL}/mobile/settings/gmail`, {
+    headers: { 'X-App-Token': APP_TOKEN },
+  });
+  return res.json();
+}
+
+export function saveGmailSettings(clientId, clientSecret) {
+  return post('/mobile/settings/gmail', { clientId, clientSecret });
+}
+
+export function disconnectGmail() {
+  return post('/mobile/settings/gmail/disconnect', {});
+}
