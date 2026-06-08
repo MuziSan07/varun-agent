@@ -51,7 +51,12 @@
       "Bash(node -e \"const p=require\\('./node_modules/expo-contacts/package.json'\\); console.log\\('expo-contacts', p.version\\)\")",
       "Bash(curl -s -m 15 -o /dev/null -w \"redirect-location: %{redirect_url}\\\\n\" \"https://206.189.207.59.nip.io/auth/google\")",
       "Bash(git -c user.email=\"dev@local\" -c user.name=\"dev\" commit -q -m \"Gmail: auto-strip https:// and quotes from pasted Client ID \\(paste-safety\\)\")",
-      "Bash(git -c user.email=\"dev@local\" -c user.name=\"dev\" commit -q -m \"Add read_email tool: open & read a specific email in full by sender/subject\")"
+      "Bash(git -c user.email=\"dev@local\" -c user.name=\"dev\" commit -q -m \"Add read_email tool: open & read a specific email in full by sender/subject\")",
+      "Bash(export EXPO_NO_TELEMETRY=1)",
+      "Bash(npx expo *)",
+      "Bash(tee /tmp/expo_tunnel.log)",
+      "Bash(echo \"started expo tunnel in background, PID $!\")",
+      "Bash(tee /tmp/expo_run.log)"
     ]
   }
 }
