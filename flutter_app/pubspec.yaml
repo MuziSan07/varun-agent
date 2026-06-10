@@ -1,0 +1,33 @@
+name: varun_assistant
+description: "Varun Assistant — personal AI assistant (Flutter). Talks to the same backend as the React Native app."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # HTTP calls to the backend (interpret / transcribe / email / settings).
+  http: ^1.2.2
+
+  # Device features (the assistant performs actions ON-DEVICE with permissions):
+  flutter_contacts: ^1.1.9          # read contacts (find Ramesh)
+  device_calendar: ^4.3.3           # read/add calendar events
+  flutter_local_notifications: ^17.2.3  # reminders
+  permission_handler: ^11.3.1       # runtime permissions
+  url_launcher: ^6.3.1              # open WhatsApp (wa.me) + Gmail OAuth in browser
+  record: ^5.1.2                    # record voice notes
+  path_provider: ^2.1.4            # temp file for the recording
+  timezone: ^0.9.4                 # required by flutter_local_notifications
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
