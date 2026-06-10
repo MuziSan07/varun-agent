@@ -20,7 +20,7 @@ dependencies:
   flutter_local_notifications: ^17.2.3  # reminders
   permission_handler: ^11.3.1       # runtime permissions
   url_launcher: ^6.3.1              # open WhatsApp (wa.me) + Gmail OAuth in browser
-  record: ^5.1.2                    # record voice notes
+  record: 5.2.1                     # record voice notes (pinned: avoids record_linux interface clash)
   path_provider: ^2.1.4            # temp file for the recording
   timezone: ^0.9.4                 # required by flutter_local_notifications
 
@@ -28,6 +28,12 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+
+# Pin the record platform packages to versions that match record 5.2.1's
+# interface (the auto-resolved record_linux 0.7.2 broke the release build).
+dependency_overrides:
+  record_linux: 0.7.1
+  record_platform_interface: 1.2.0
 
 flutter:
   uses-material-design: true
