@@ -205,3 +205,10 @@ of this; the process logs a per-service ✓/✗ summary at boot.
 - Twilio webhook signature validation is enabled when `PUBLIC_BASE_URL` +
   `TWILIO_AUTH_TOKEN` are set.
 - Booking/call actions are confirmed by the agent and gated by SANDBOX by default.
+
+---
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file
+for details.

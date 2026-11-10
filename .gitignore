@@ -30,3 +30,9 @@ tmp/
 b.txt
 be.txt
 *.tmp
+
+# Local Claude Code settings (may contain tokens/hosts from curl commands)
+.claude/settings.local.json
+
+# Build / distribution archives (don't commit binaries)
+*.zip

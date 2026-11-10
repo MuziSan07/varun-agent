@@ -4,6 +4,7 @@
   "description": "Personal WhatsApp AI assistant agent (Claude tool-calling) with ride/flight booking, voice notes, reminders, and call-if-no-response.",
   "type": "module",
   "main": "src/index.js",
+  "license": "MIT",
   "engines": {
     "node": ">=20"
   },
